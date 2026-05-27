@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools==69.5.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-vfs"
+version = "1.0.0a0"
+description = "Hardened, agent-agnostic file system for memory and scratch"
+requires-python = ">=3.9"
+authors = [{name = "Dirk Knibbe"}]
+readme = "README.md"
+license = {text = "MIT"}
+keywords = ["agent", "llm", "memory", "vfs"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX",
+]
+
+[project.scripts]
+vfs = "vfs.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-timeout>=2.0", "build>=1.0"]
+
+[tool.setuptools]
+packages = ["vfs", "vfs.backends"]
