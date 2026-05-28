@@ -301,7 +301,7 @@ Result: `OK` ✓
 
 **Success criterion:** for each of the three branches (ticket-ID given, repo-detected, totally local), the snippet outputs a sensible workspace name. Inline asserts cover the repo-detection logic. The counter-scan path is harder to unit-test inline (needs a real VFS) — covered by smoke tests 3 and (implicitly) any test that re-runs Task 6.
 
-- [ ] **Step 1: Replace `## Step 1: Resolve workspace name` in SKILL.md**
+- [x] **Step 1: Replace `## Step 1: Resolve workspace name` in SKILL.md**
 
 ````markdown
 ## Step 1: Resolve workspace name
@@ -422,7 +422,7 @@ Validate `^[a-z0-9-]{1,64}$`. Re-prompt once on invalid. Abort cleanly with `can
 Abort the skill.
 ````
 
-- [ ] **Step 2: Verify the URL parsing + host recognition unit tests pass**
+- [x] **Step 2: Verify the URL parsing + host recognition unit tests pass**
 
 ```bash
 python3 -c "
@@ -444,7 +444,7 @@ print('OK')
 
 Expected: `OK`. If failure: regex is broken; fix the snippet in the SKILL.md.
 
-- [ ] **Step 3: Verify the live repo case end-to-end**
+- [x] **Step 3: Verify the live repo case end-to-end**
 
 ```bash
 cd /Users/dirkknibbe/vfs-memory
@@ -453,7 +453,7 @@ git remote get-url origin       # expect: github URL
 
 This is what `repo_name_from_origin()` calls. Confirms git is wired correctly.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 cd /Users/dirkknibbe/vfs-memory
