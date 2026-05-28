@@ -202,14 +202,13 @@ Parse the triggering user phrase. Save the snippet below to `/tmp/vfs_kickoff_pa
 import re
 import sys
 
-# Verbs that mean "start fresh"
-KICKOFF_VERBS = {"kick off", "start", "begin"}
-# Verbs that mean "pick back up"
-RESUME_VERBS = {"resume", "pick up"}
-
 # Ticket-ID regex
 PRIMARY_RE = re.compile(r"[A-Z][A-Z0-9]+-\d+")     # Jira / Linear: ENG-1234, PROJ-77
-ASANA_RE = re.compile(r"\b\d{10,}\b")              # Asana: bare 10+-digit numeric
+# ASANA_RE: bare 10+-digit numeric. Asana task IDs are typically 12-19
+# digits; the 10-digit lower bound avoids matching incidental numbers in
+# conversation (dates, amounts, etc.). Deliberate broad match — only used
+# when PRIMARY_RE finds no Jira/Linear-style ID.
+ASANA_RE = re.compile(r"\b\d{10,}\b")
 
 VERB_PHRASE_RE = re.compile(
     r"\blet'?s?\b\s+(kick\s+off|pick\s+up|start|begin|resume)\b",
