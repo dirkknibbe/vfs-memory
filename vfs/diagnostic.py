@@ -23,11 +23,11 @@ class DiagnosticLog:
         self.path = path
         parent = os.path.dirname(path)
         if parent:
-            old_umask = os.umask(0o077)
+            os.makedirs(parent, mode=0o700, exist_ok=True)
             try:
-                os.makedirs(parent, mode=0o700, exist_ok=True)
-            finally:
-                os.umask(old_umask)
+                os.chmod(parent, 0o700)
+            except OSError:
+                pass
 
     def append(self, record: dict) -> None:
         full = dict(record)
@@ -37,13 +37,15 @@ class DiagnosticLog:
         max_bytes = int(os.environ.get(
             "VFS_MAX_DIAGNOSTIC_LOG_BYTES", str(DEFAULT_MAX_BYTES)
         ))
-        old_umask = os.umask(0o077)
+        # No umask juggling: os.umask is process-global and races between
+        # threads. Use os.fchmod after open instead.
+        fd = os.open(self.path,
+                     os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW,
+                     mode=0o600)
         try:
-            fd = os.open(self.path,
-                         os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW,
-                         mode=0o600)
-        finally:
-            os.umask(old_umask)
+            os.fchmod(fd, 0o600)
+        except OSError:
+            pass
         try:
             fcntl.flock(fd, fcntl.LOCK_EX)
             try:
@@ -54,13 +56,13 @@ class DiagnosticLog:
                     except OSError:
                         pass
                     os.close(fd)
-                    old_umask = os.umask(0o077)
+                    fd = os.open(self.path,
+                                 os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW,
+                                 mode=0o600)
                     try:
-                        fd = os.open(self.path,
-                                     os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW,
-                                     mode=0o600)
-                    finally:
-                        os.umask(old_umask)
+                        os.fchmod(fd, 0o600)
+                    except OSError:
+                        pass
                     fcntl.flock(fd, fcntl.LOCK_EX)
                 os.write(fd, line.encode("utf-8"))
             finally:

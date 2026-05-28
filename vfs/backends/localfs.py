@@ -292,9 +292,10 @@ class LocalFSBackend:
                             f"current {current_etag!r}"
                         )
 
-            # Atomic write via O_CREAT|O_EXCL temp file in dest's parent,
-            # then renameat. All ops stay inside the symlink-contained
-            # traversal — never use tempfile.mkstemp (no dir_fd support).
+            # Atomic write via O_CREAT|O_EXCL temp file in dest's parent.
+            # For CAS-create (if_match=""), use os.link + unlink to atomically
+            # refuse if dest already exists (no TOCTOU window). For overwrite
+            # or update, use os.rename (replaces atomically).
             tmp_basename = f".vfs-tmp-{secrets.token_hex(8)}"
             tmp_fd = os.open(
                 tmp_basename,
@@ -305,13 +306,32 @@ class LocalFSBackend:
             try:
                 with os.fdopen(tmp_fd, "wb") as fp:
                     fp.write(encoded)
-                os.rename(
-                    tmp_basename,
-                    filename,
-                    src_dir_fd=parent_fd,
-                    dst_dir_fd=parent_fd,
-                )
-                tmp_basename = None
+                if if_match == "":
+                    # CAS-create: link is atomic and refuses if dest exists
+                    try:
+                        os.link(
+                            tmp_basename, filename,
+                            src_dir_fd=parent_fd, dst_dir_fd=parent_fd,
+                            follow_symlinks=False,
+                        )
+                    except FileExistsError as e:
+                        raise ConflictError(
+                            f"CAS-create failed: {key!r} already exists"
+                        ) from e
+                    finally:
+                        try:
+                            os.unlink(tmp_basename, dir_fd=parent_fd)
+                            tmp_basename = None
+                        except OSError:
+                            pass
+                else:
+                    os.rename(
+                        tmp_basename,
+                        filename,
+                        src_dir_fd=parent_fd,
+                        dst_dir_fd=parent_fd,
+                    )
+                    tmp_basename = None
             finally:
                 if tmp_basename is not None:
                     try:
