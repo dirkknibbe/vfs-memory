@@ -6,10 +6,10 @@ import re
 import sys
 from pathlib import Path
 
-from vfs import __version__
-from vfs.core import VFS, init_project
-from vfs.ratelimit import WriteRateLimiter
-from vfs.types import (
+from agent_vfs import __version__
+from agent_vfs.core import VFS, init_project
+from agent_vfs.ratelimit import WriteRateLimiter
+from agent_vfs.types import (
     ConflictError, NotFoundError, PermissionGateError,
     ValidationError, VFSError, ZoneViolationError,
 )
@@ -195,7 +195,7 @@ def _cmd_search(args) -> int:
 
 
 def _cmd_gc(args) -> int:
-    from vfs.gc import sweep_temp_zone
+    from agent_vfs.gc import sweep_temp_zone
     v = _vfs_for(args)
     try:
         removed = sweep_temp_zone(str(v.root / ".vfs" / "temp"))
@@ -256,7 +256,7 @@ def _cmd_review(args) -> int:
 
 
 def _cmd_migrate(args) -> int:
-    from vfs.migrate import run_migration
+    from agent_vfs.migrate import run_migration
 
     try:
         _require_tty()
@@ -288,7 +288,7 @@ def _cmd_migrate(args) -> int:
 # ---- argparse wiring ----
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="vfs", description="agent-vfs CLI")
+    p = argparse.ArgumentParser(prog="agent_vfs", description="agent-vfs CLI")
     p.add_argument("--json", action="store_true",
                    help="JSON output where applicable")
     p.add_argument("--root",

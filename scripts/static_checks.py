@@ -93,7 +93,7 @@ def check_no_runtime_deps(repo_root: pathlib.Path) -> list:
 
 def main():
     repo_root = pathlib.Path(__file__).resolve().parents[1]
-    pkg_root = repo_root / "vfs"
+    pkg_root = repo_root / "agent_vfs"
     failed = False
 
     print("[1/3] no banned imports (AST)")

@@ -2,8 +2,8 @@ import os
 import stat
 import pytest
 
-from vfs.backends.localfs import LocalFSBackend
-from vfs.types import (
+from agent_vfs.backends.localfs import LocalFSBackend
+from agent_vfs.types import (
     ConflictError, NotFoundError, ValidationError, VFSError,
     ZoneViolationError,
 )

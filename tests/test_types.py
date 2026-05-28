@@ -1,4 +1,4 @@
-from vfs.types import (
+from agent_vfs.types import (
     Entry, BackendCapabilities,
     VFSError, NotFoundError, ConflictError, CapabilityError,
     ZoneViolationError, ValidationError, PermissionGateError,

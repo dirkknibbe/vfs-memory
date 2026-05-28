@@ -1,13 +1,13 @@
 """Zone wrappers: TempZone (flat, no provenance), PersistentZone (frontmatter)."""
 from typing import List, Optional, Tuple
 
-from vfs.backends.localfs import LocalFSBackend
-from vfs.frontmatter import (
+from agent_vfs.backends.localfs import LocalFSBackend
+from agent_vfs.frontmatter import (
     _check_field_key, _check_field_value,
     make_frontmatter, parse_frontmatter,
 )
-from vfs.secrets import looks_like_secret
-from vfs.types import Entry, NotFoundError, ValidationError
+from agent_vfs.secrets import looks_like_secret
+from agent_vfs.types import Entry, NotFoundError, ValidationError
 
 
 _VFS_OWNED_FIELDS = {"writer", "source", "ts", "project_slug", "etag"}

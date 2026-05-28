@@ -1,7 +1,7 @@
 import pytest
 
-from vfs.frontmatter import make_frontmatter, parse_frontmatter
-from vfs.types import ValidationError
+from agent_vfs.frontmatter import make_frontmatter, parse_frontmatter
+from agent_vfs.types import ValidationError
 
 
 def test_make_basic():

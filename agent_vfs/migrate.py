@@ -9,9 +9,9 @@ import os
 import stat as _stat
 from pathlib import Path
 
-from vfs.backends.localfs import MAX_OBJECT_SIZE_BYTES
-from vfs.frontmatter import parse_frontmatter
-from vfs.types import ValidationError
+from agent_vfs.backends.localfs import MAX_OBJECT_SIZE_BYTES
+from agent_vfs.frontmatter import parse_frontmatter
+from agent_vfs.types import ValidationError
 
 
 def _collect_md_files(src_root: str) -> list:

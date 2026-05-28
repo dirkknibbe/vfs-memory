@@ -2,7 +2,7 @@ import os
 import time
 from pathlib import Path
 
-from vfs.gc import opportunistic_sweep, sweep_temp_zone
+from agent_vfs.gc import opportunistic_sweep, sweep_temp_zone
 
 
 def test_sweep_removes_old(tmp_path):

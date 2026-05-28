@@ -1,8 +1,12 @@
 # Changelog
 
-## 1.0.0a0 — 2026-05-27
+All notable changes to this project will be documented in this file. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Initial release of `agent-vfs`. Succeeds an unpublished in-tree v0.5/v0.6 package now deprecated; see `docs/superpowers/specs/2026-05-27-generic-vfs-design.md` for the v1 design rationale and the cheat-sheet of changes.
+## [Unreleased]
+
+## [0.6.0] — 2026-05-27
+
+Initial release of `agent-vfs` on PyPI. Succeeds an unpublished in-tree v0.5/v0.6 package now deprecated; see `docs/superpowers/specs/2026-05-27-generic-vfs-design.md` for the v1 design rationale and the cheat-sheet of changes.
 
 ### Added
 - CLI: `vfs init / read / write / list / delete / search / temp <subcmd> / whoami / version / remember / review / migrate / gc`.

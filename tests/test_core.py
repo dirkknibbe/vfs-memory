@@ -1,7 +1,7 @@
 import pytest
 
-from vfs.core import VFS, init_project
-from vfs.types import NotFoundError, ValidationError
+from agent_vfs.core import VFS, init_project
+from agent_vfs.types import NotFoundError, ValidationError
 
 
 def test_init_creates_layout(tmp_path, monkeypatch):

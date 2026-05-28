@@ -5,11 +5,11 @@ import secrets
 import stat
 from typing import List, Optional, Tuple
 
-from vfs.types import (
+from agent_vfs.types import (
     BackendCapabilities, ConflictError, Entry, NotFoundError,
     ValidationError, VFSError, ZoneViolationError,
 )
-from vfs.paths import validate_key
+from agent_vfs.paths import validate_key
 
 
 MAX_OBJECT_SIZE_BYTES = 10_000_000  # 10 MB enforced cap

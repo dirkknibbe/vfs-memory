@@ -1,8 +1,8 @@
 import pytest
 from pathlib import Path
 
-from vfs.paths import resolve_project_root, validate_key
-from vfs.types import NotFoundError, ValidationError
+from agent_vfs.paths import resolve_project_root, validate_key
+from agent_vfs.types import NotFoundError, ValidationError
 
 
 VALID_KEYS = [

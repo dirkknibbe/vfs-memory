@@ -19,7 +19,7 @@ import re
 from datetime import datetime, timezone
 from typing import Dict, Tuple
 
-from vfs.types import ValidationError
+from agent_vfs.types import ValidationError
 
 
 _CONTROL_CHARS = re.compile(r"[\x00-\x1f]")

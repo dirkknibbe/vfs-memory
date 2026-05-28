@@ -8,8 +8,8 @@ import time
 
 import pytest
 
-from vfs.backends.localfs import LocalFSBackend
-from vfs.types import (
+from agent_vfs.backends.localfs import LocalFSBackend
+from agent_vfs.types import (
     ConflictError, NotFoundError, ValidationError, VFSError,
     ZoneViolationError,
 )
@@ -122,7 +122,7 @@ def test_cas_create_concurrent(tmp_path):
 
 def test_rate_limit_blocks_loop(tmp_path):
     """Loop-prompt-injection style: many sequential writes hit the limit."""
-    from vfs.ratelimit import WriteRateLimiter
+    from agent_vfs.ratelimit import WriteRateLimiter
     rl = WriteRateLimiter(str(tmp_path / "rl.state"), limit=10, window_s=60)
     succeeded = 0
     for _ in range(50):
@@ -166,7 +166,7 @@ def test_write_zero_byte(tmp_path):
 # ----- CLI exit-code matrix -----
 
 def _vfs_cli(*args, cwd=None, env=None, input=None):
-    cmd = [sys.executable, "-m", "vfs.cli", *args]
+    cmd = [sys.executable, "-m", "agent_vfs.cli", *args]
     env_full = {**os.environ}
     if env:
         env_full.update(env)
@@ -236,7 +236,7 @@ def test_concurrent_reads_during_writes(tmp_path):
 
 def test_default_source_not_promoted_by_writer_env(tmp_path, monkeypatch):
     """$VFS_WRITER=user must not promote default writes to source=user."""
-    from vfs.core import VFS, init_project
+    from agent_vfs.core import VFS, init_project
     init_project(tmp_path)
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("HOME", str(tmp_path))
@@ -255,7 +255,7 @@ def test_default_source_not_promoted_by_writer_env(tmp_path, monkeypatch):
 
 def test_e2e_read_strips_injected_frontmatter(tmp_path, monkeypatch):
     """A pre-planted malicious file — zone.read returns sanitized fm."""
-    from vfs.core import VFS, init_project
+    from agent_vfs.core import VFS, init_project
     init_project(tmp_path)
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("HOME", str(tmp_path))

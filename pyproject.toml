@@ -4,14 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-vfs"
-version = "1.0.0a0"
-description = "Hardened, agent-agnostic file system for memory and scratch"
+version = "0.6.0"
+description = "Portable project memory across LLM agents — `.vfs/` directory, file-shaped, git-adjacent"
 requires-python = ">=3.9"
 authors = [{name = "Dirk Knibbe"}]
 readme = "README.md"
 license = {text = "MIT"}
-keywords = ["agent", "llm", "memory", "vfs"]
+keywords = [
+    "agent-memory", "ai-agents", "claude-code", "codex", "copilot",
+    "llm", "scratch", "prompt-injection", "vfs",
+]
 classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -19,13 +24,23 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX",
+    "Operating System :: MacOS",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Filesystems",
+    "Topic :: Utilities",
 ]
 
+[project.urls]
+Homepage = "https://github.com/dirkknibbe/vfs-memory"
+Repository = "https://github.com/dirkknibbe/vfs-memory"
+Issues = "https://github.com/dirkknibbe/vfs-memory/issues"
+Changelog = "https://github.com/dirkknibbe/vfs-memory/blob/main/CHANGELOG.md"
+
 [project.scripts]
-vfs = "vfs.cli:main"
+vfs = "agent_vfs.cli:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "pytest-timeout>=2.0", "build>=1.0"]
 
 [tool.setuptools]
-packages = ["vfs", "vfs.backends"]
+packages = ["agent_vfs", "agent_vfs.backends"]

@@ -2,8 +2,8 @@ import time
 
 import pytest
 
-from vfs.ratelimit import WriteRateLimiter
-from vfs.types import VFSError
+from agent_vfs.ratelimit import WriteRateLimiter
+from agent_vfs.types import VFSError
 
 
 def test_under_limit(tmp_path):

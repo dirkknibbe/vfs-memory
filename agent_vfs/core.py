@@ -4,13 +4,13 @@ import re
 from pathlib import Path
 from typing import Optional
 
-from vfs.backends.localfs import LocalFSBackend
-from vfs.config import read_config, write_config
-from vfs.diagnostic import DiagnosticLog
-from vfs.gc import opportunistic_sweep
-from vfs.paths import resolve_project_root
-from vfs.types import ValidationError
-from vfs.zones import PersistentZone, TempZone
+from agent_vfs.backends.localfs import LocalFSBackend
+from agent_vfs.config import read_config, write_config
+from agent_vfs.diagnostic import DiagnosticLog
+from agent_vfs.gc import opportunistic_sweep
+from agent_vfs.paths import resolve_project_root
+from agent_vfs.types import ValidationError
+from agent_vfs.zones import PersistentZone, TempZone
 
 
 _WRITER_ID_PATTERN = re.compile(r"^[\w.-]+$")

@@ -19,7 +19,7 @@ import re
 from pathlib import Path
 from typing import Optional
 
-from vfs.types import NotFoundError, ValidationError
+from agent_vfs.types import NotFoundError, ValidationError
 
 
 _ALLOWED_CHARSET = re.compile(r"^[A-Za-z0-9._/-]+$")

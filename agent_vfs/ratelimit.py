@@ -5,7 +5,7 @@ import os
 import stat as _stat
 import time
 
-from vfs.types import VFSError
+from agent_vfs.types import VFSError
 
 
 class WriteRateLimiter:

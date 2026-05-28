@@ -6,12 +6,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from vfs.core import VFS, init_project
-from vfs.migrate import run_migration
+from agent_vfs.core import VFS, init_project
+from agent_vfs.migrate import run_migration
 
 
 def _vfs(*args, cwd=None, env=None, input=None):
-    cmd = [sys.executable, "-m", "vfs.cli", *args]
+    cmd = [sys.executable, "-m", "agent_vfs.cli", *args]
     env_full = {**os.environ}
     if env:
         env_full.update(env)

@@ -2,10 +2,10 @@ import json
 
 import pytest
 
-from vfs.backends.localfs import LocalFSBackend
-from vfs.diagnostic import DiagnosticLog
-from vfs.types import ValidationError
-from vfs.zones import PersistentZone, TempZone
+from agent_vfs.backends.localfs import LocalFSBackend
+from agent_vfs.diagnostic import DiagnosticLog
+from agent_vfs.types import ValidationError
+from agent_vfs.zones import PersistentZone, TempZone
 
 
 # ----- TempZone -----

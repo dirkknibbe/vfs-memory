@@ -1,4 +1,4 @@
-from vfs.secrets import looks_like_secret
+from agent_vfs.secrets import looks_like_secret
 
 
 def test_aws_key():

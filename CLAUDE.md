@@ -4,7 +4,7 @@
 
 Hardened, agent-agnostic file system for memory and scratch. Per-project `.vfs/` directory (like `.git`). Consumed via a CLI (`vfs`) usable from any agent that can shell out — Claude Code, Codex, Copilot, Cursor.
 
-GitHub repo: `vfs-memory`. PyPI package: `agent-vfs` (because the bare `vfs` name is taken on PyPI). Binary and Python import: `vfs`.
+GitHub repo: `vfs-memory`. PyPI package: `agent-vfs`. Python import: `agent_vfs`. Binary: `vfs`.
 
 ## Stack
 
@@ -17,7 +17,7 @@ GitHub repo: `vfs-memory`. PyPI package: `agent-vfs` (because the bare `vfs` nam
 ## Layout
 
 ```
-vfs/                     # the Python package (import name)
+agent_vfs/               # the Python package (import name)
   __init__.py
   core.py                # VFS, init_project
   types.py               # error hierarchy + dataclasses
@@ -50,7 +50,7 @@ scripts/static_checks.py
 - **No banned imports**: `urllib`, `http`, `socket`, `ssl`, `requests`, `httpx`, `aiohttp`, `subprocess`, `ftplib`, `smtplib`, `telnetlib`. The AST-based static check catches direct and aliased imports.
 - **No shell-call or dynamic-code builtins** in `vfs/`. The static check enforces this by substring scan.
 - **`__del__` is banned for FD-holding classes.** Use explicit `close()` with try/finally in callers.
-- **All file ops in `LocalFSBackend` traverse via `dir_fd` + `O_NOFOLLOW`.** No absolute-path `os.open` paths inside the backend after init. No `tempfile.mkstemp` (it can't accept `dir_fd`).
+- **All file ops in `LocalFSBackend` traverse via `dir_fd` + `O_NOFOLLOW`.** No absolute-path `os.open` paths inside the backend after init. No `tempfile.mkstemp` (it can't accept `dir_fd`). CAS-create uses `os.link` (atomic) to refuse if dest exists.
 - **Security gates have no env override.** `--as-user`, `--root`, and `vfs migrate` are TTY-gated only. Do not add an env-var bypass even for CI.
 
 ## Commits

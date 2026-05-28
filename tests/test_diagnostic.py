@@ -2,7 +2,7 @@ import json
 import os
 import threading
 
-from vfs.diagnostic import DiagnosticLog
+from agent_vfs.diagnostic import DiagnosticLog
 
 
 def test_append_one(tmp_path):
