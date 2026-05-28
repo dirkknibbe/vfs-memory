@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file. Format foll
 
 ## [Unreleased]
 
+### Security
+- Bumped PEP 517 build pin from `setuptools==69.5.1` to `setuptools>=78.1.1` to clear two Dependabot HIGH advisories (GHSA-cx63-2mw6-8hw5 command injection in `PackageIndex`, GHSA-5rjg-fvgr-3xxf path traversal in `PackageIndex.download`). Both are dev-only; runtime is stdlib-only and end users are unaffected.
+
 ## [0.6.0] — 2026-05-27
 
 Initial release of `agent-vfs` on PyPI. Succeeds an unpublished in-tree v0.5/v0.6 package now deprecated; see `docs/superpowers/specs/2026-05-27-generic-vfs-design.md` for the v1 design rationale and the cheat-sheet of changes.
