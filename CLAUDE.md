@@ -40,8 +40,8 @@ scripts/static_checks.py
 
 ## Spec + plan
 
-- **Design spec**: `/Users/dirkknibbe/claude-workflow/docs/superpowers/specs/2026-05-27-generic-vfs-design.md`
-- **Implementation plan**: `/Users/dirkknibbe/claude-workflow/docs/superpowers/plans/2026-05-27-generic-vfs-implementation.md`
+- **Design spec**: `docs/superpowers/specs/2026-05-27-generic-vfs-design.md`
+- **Implementation plan**: `docs/superpowers/plans/2026-05-27-generic-vfs-implementation.md`
 - Both have been through a 4-agent review pass; the second commit on each applies the review findings.
 
 ## Rules specific to this project

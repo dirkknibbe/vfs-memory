@@ -2,7 +2,7 @@
 
 ## 1.0.0a0 — 2026-05-27
 
-Initial release of `agent-vfs`, the generic successor to the in-tree `vfs` package at `dirkknibbe/claude-workflow/vfs/` (now deprecated at v0.6).
+Initial release of `agent-vfs`. Succeeds an unpublished in-tree v0.5/v0.6 package now deprecated; see `docs/superpowers/specs/2026-05-27-generic-vfs-design.md` for the v1 design rationale and the cheat-sheet of changes.
 
 ### Added
 - CLI: `vfs init / read / write / list / delete / search / temp <subcmd> / whoami / version / remember / review / migrate / gc`.
