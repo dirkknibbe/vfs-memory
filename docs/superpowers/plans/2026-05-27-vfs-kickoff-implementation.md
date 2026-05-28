@@ -327,10 +327,10 @@ import sys
 
 # Allow-listed git hosts (any URL matching one of these → "recognized repo")
 HOST_PATTERNS = [
-    re.compile(r"github\.com"),
-    re.compile(r"gitlab\."),           # gitlab.com OR any self-hosted gitlab.<tld>
-    re.compile(r"bitbucket\.org"),
-    re.compile(r"gitea\."),            # any gitea.<tld>
+    re.compile(r"github\.com"),         # github.com (no GitHub Enterprise pattern — add as needed)
+    re.compile(r"gitlab\."),            # gitlab.com OR any self-hosted gitlab.<tld>
+    re.compile(r"bitbucket\.org"),      # bitbucket.org (no Bitbucket Server self-hosted pattern — add as needed)
+    re.compile(r"gitea\."),             # any gitea.<tld>
 ]
 
 # SSH (git@host:owner/repo.git) and HTTPS (https://host/owner/repo.git)
@@ -356,23 +356,28 @@ def repo_name_from_origin():
             stderr=subprocess.DEVNULL,
             text=True,
         ).strip()
-    except subprocess.CalledProcessError:
-        return None  # no origin or not in a git repo
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError):
+        return None  # no origin, not in a git repo, or git not on PATH
     host, path = parse_remote(url)
     if not host or not is_recognized_host(host):
         return None
     return path.rsplit("/", 1)[-1]
 
 def next_task_counter(repo_name: str) -> int:
-    """Scan vfs.persistent for tickets/<repo>-task-<N>, return max(N)+1, default 1."""
+    """Scan vfs.persistent for tickets/<repo>-task-<N>, return max(N)+1, default 1.
+
+    Note: agent-vfs PersistentZone.list returns (entries, next_cursor) — a tuple
+    of List[Entry] and Optional[str] cursor for pagination. Default max_items=100
+    is fine for personal-use scales; paginate if a single repo ever has 100+ workspaces.
+    """
     from agent_vfs import VFS
     v = VFS(writer_id="claude")
     prefix = f"tickets/{repo_name}-task-"
-    entries = v.persistent.list(prefix=prefix)
+    entries, _cursor = v.persistent.list(prefix=prefix)
     pat = re.compile(rf"^{re.escape(prefix)}(\d+)(/|$)")
     nums = []
     for e in entries:
-        m = pat.match(e.key if hasattr(e, "key") else e)
+        m = pat.match(e.key)
         if m:
             nums.append(int(m.group(1)))
     return (max(nums) + 1) if nums else 1
@@ -929,10 +934,11 @@ try:
 except FileNotFoundError:
     scratch_tail = ""
 
+decisions_entries, _ = v.persistent.list(prefix=f"{prefix}/decisions/")
 decisions = [
-    e.key if hasattr(e, "key") else e
-    for e in v.persistent.list(prefix=f"{prefix}/decisions/")
-    if not (e.key if hasattr(e, "key") else e).endswith(".gitkeep")
+    e.key
+    for e in decisions_entries
+    if not e.key.endswith(".gitkeep")
 ]
 
 print(f"title={ticket_fm.get('title') or ticket_fm.get('workspace') or WORKSPACE_NAME}")
