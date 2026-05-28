@@ -2,7 +2,9 @@
 
 ## Reporting
 
-Email dirk.knibbe@yahoo.com. We respond within 5 business days.
+Use **GitHub Private Vulnerability Reporting** at https://github.com/dirkknibbe/vfs-memory/security/advisories/new. Acknowledged within 5 business days.
+
+Reports about a fix that is already public (or about non-vulnerability bugs) can also go to a regular [GitHub issue](https://github.com/dirkknibbe/vfs-memory/issues).
 
 ## Threat model
 
