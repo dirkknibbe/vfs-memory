@@ -16,7 +16,7 @@ A single skill that fires on phrases like `lets kick off ENG-1234`, scaffolds a 
 
 Explicitly out of scope, so future scope-creep has a written line to point at:
 
-- Fetching ticket comments, attachments, linked tickets, parent epics. Defer until actually wanted.
+- Fetching ticket comments, attachments, linked tickets. Defer until actually wanted. (Parent ticket context **is** in scope — see "Parent ticket fetch" below. Comments etc. are not.)
 - Auto-scoping subsequent `vfs:remember` writes into the workspace. (User decided no — "doesn't bite if you forget" beats invisible session state.)
 - Workspace listing, switching, archiving. `vfs list --prefix tickets/` and `vfs delete` cover those by hand.
 - Hierarchy (subtasks, epics). One flat workspace per ticket.
@@ -99,9 +99,10 @@ kicked off tickets/<workspace_name>/
 trackers queried: <comma-list of connected> [(<comma-list of not-connected> not connected)]
 hit in: <comma-list>  |  (none)  |  (no ticket ID — repo fallback)
 selected: <tracker>  |  (none — stub workspace)  |  (n/a)
+parent: <parent_id> (<status>)  |  (no parent)  |  (parent fetch failed: <reason>)  |  (n/a)
 ```
 
-The parenthetical "not connected" suffix is **omitted** when all known trackers are connected. The four lines are always present in the order shown; the `|` markers above just enumerate the value variants per line. Examples below show the actual rendering.
+The parenthetical "not connected" suffix is **omitted** when all known trackers are connected. The `parent:` line is **omitted entirely** when no primary tracker hit occurred (no parent to fetch). The other lines are always present in the order shown; the `|` markers just enumerate the value variants per line. Examples below show the actual rendering.
 
 Examples:
 
@@ -110,6 +111,7 @@ kicked off tickets/ENG-1234/
 trackers queried: atlassian (linear, asana not connected)
 hit in: atlassian
 selected: atlassian
+parent: EPIC-7 (In Progress)
 ```
 
 ```
@@ -117,6 +119,15 @@ kicked off tickets/ENG-1234/
 trackers queried: atlassian, linear (asana not connected)
 hit in: atlassian, linear
 selected: atlassian (priority: atlassian > linear > asana)
+parent: (no parent)
+```
+
+```
+kicked off tickets/ENG-1234/
+trackers queried: atlassian
+hit in: atlassian
+selected: atlassian
+parent: (parent fetch failed: 404 not found)
 ```
 
 ```
@@ -131,6 +142,16 @@ kicked off tickets/vfs-memory-task-3/
 trackers queried: (no ticket ID — repo fallback)
 selected: (n/a)
 ```
+
+## Parent ticket fetch
+
+When the main ticket fetch succeeds and the returned ticket has a parent (Jira: parent epic / parent story for subtasks; Linear: `parent` field; Asana: parent task), fire **one additional** MCP call to the *same* tracker that won the primary fetch to retrieve the parent's `id`, `title`, `status`, and `url`.
+
+**One level only. No recursion** — we do not fetch the grandparent or any sub-issues. Bounded, predictable cost (0 or 1 additional MCP call per kickoff).
+
+**Failure handling:** if the parent fetch errors (network, auth, not-found), leave the parent fields null in `ticket.md` frontmatter and append a single-line note to the transparency report. The kickoff still completes — parent context is best-effort, not a hard requirement.
+
+**Cross-tracker parents** (e.g. a Linear ticket whose parent lives in Asana) are not supported. We only query the winning tracker. In practice parent relations are intra-tracker.
 
 ## Scaffold layout
 
@@ -157,6 +178,11 @@ assignee: <assignee or null>
 priority: <priority or null>
 labels: [<list>]
 source_url: <permalink back to ticket>
+parent:
+  id: <parent_id or null>
+  title: <parent_title or null>
+  status: <parent_status or null>
+  url: <parent_url or null>
 fetched_at: <ISO-8601>
 ---
 
@@ -164,6 +190,8 @@ fetched_at: <ISO-8601>
 
 <description, markdown body from MCP>
 ```
+
+The `parent:` block is always present in the frontmatter for shape consistency. All four nested fields are `null` when the ticket has no parent. When parent fetch fails, all four are also `null` (and the transparency report notes the failure).
 
 ### `ticket.md` content — no-MCP / stub case
 
@@ -209,6 +237,7 @@ Triggered by `lets resume <X>` / `let's resume <X>` / `lets pick up <X>`. `<X>` 
 5. List tickets/<X>/decisions/* keys.
 6. Surface a tight summary as a system-style note in the conversation:
      - Ticket title + status (or workspace name if stub)
+     - Parent reference (id + title + status), if `parent:` block in ticket.md frontmatter has non-null fields
      - Plan body (if non-empty)
      - Last 50 lines of scratchpad (if non-empty)
      - List of decisions keys
@@ -225,6 +254,9 @@ The surfaced summary is the value-add: without it, `lets resume` is just `vfs re
 | `lets kick off ENG-1234`, MCP fetch fails / not connected | Workspace = `ENG-1234`, ticket.md = stub, report shows `hit in: (none)`. No warning prefix — the transparency report itself is the signal. |
 | `lets kick off ENG-1234`, multi-tracker collision | Workspace = `ENG-1234`, ticket.md from priority winner, report shows all hits + which selected |
 | `lets kick off ENG-1234`, MCP returns "not found" (vs error) | Same as fetch fails: workspace + stub, report transparent |
+| Main fetch succeeds, ticket has no parent | `parent:` block fields all `null`; transparency report shows `parent: (no parent)` |
+| Main fetch succeeds, parent fetch errors | `parent:` block fields all `null`; transparency report shows `parent: (parent fetch failed: <reason>)`. Workspace creation still succeeds — parent is best-effort. |
+| Cross-tracker parent (Linear ticket with Asana parent) | Not supported. Only the winning tracker is queried for parent. In practice this combination doesn't occur. |
 | `lets kick off`, no ID, repo recognized | Workspace = `<repo>-task-<N>`, no MCP probe (no ID to probe with), ticket.md = stub with `ticket_id: null` |
 | `lets kick off`, no ID, no recognized remote | Prompt user for workspace name; validate `^[a-z0-9-]{1,64}$`; re-prompt once on invalid; abort cleanly on empty (no scaffold created) |
 | `lets kick off ENG-1234`, workspace already exists | Refuse, print: `tickets/ENG-1234/ already exists. Use 'lets resume ENG-1234' to pick it back up.` Don't clobber any file. |
@@ -254,6 +286,9 @@ Smoke checklist (each case = one chat-turn invocation):
 6. **Resume an existing workspace** — `lets resume <id>`. Verify: summary surfaced (title, status, scratchpad tail, decisions list).
 7. **Resume missing workspace** — `lets resume NEVER-OPENED-1`. Verify: error with "did you mean kick off" hint.
 8. **Multi-tracker collision** (if both Atlassian and Linear MCPs connected with overlapping IDs) — verify report shows both hits + priority selection.
+9. **Kickoff for a ticket with a known parent** — verify `parent:` block in ticket.md has all four fields populated and transparency report shows `parent: <id> (<status>)`.
+10. **Kickoff for a ticket with no parent** — verify `parent:` block fields are all `null` and report shows `parent: (no parent)`.
+11. **Kickoff where parent fetch errors** (simulate by killing MCP between main + parent calls, if feasible) — verify main workspace still created, parent fields null, report shows the failure reason.
 
 No automated test suite. The 8 cases above are short and the cost of regression is low (it's a personal tool; the user will notice).
 
@@ -284,5 +319,5 @@ description: Use when the user is starting work on a fresh piece — phrases lik
 - Override flags (`lets kick off ENG-1234 from linear`) — add only when priority default loses to a tracker the user actually wants more often.
 - Workspace listing / switching commands — `vfs list --prefix tickets/` covers this today; add a dedicated verb if the volume grows.
 - Auto-archive of old workspaces — manual `vfs delete` covers this today; add if the user accumulates 50+ inactive workspaces and finds them noisy.
-- Pulling comments / linked tickets / parent epics on the MCP fetch — add when the user wants this on a specific real ticket and the friction is visible.
+- Pulling comments / linked tickets / attachments on the MCP fetch — add when the user wants this on a specific real ticket and the friction is visible. (Parent epics / parent tickets shipped in v1.)
 - Slash-command verb (`/kickoff ENG-1234`) as an alternative to the natural-language trigger — add if the trigger detection produces too many false negatives in practice.
