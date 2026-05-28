@@ -188,7 +188,7 @@ git push
 
 **Success criterion:** the snippet below, with its inline `assert` block at the bottom, runs without AssertionError. This is the unit test for phrase parsing.
 
-- [ ] **Step 1: Write the failing assertions first** (TDD shape, even for a skill snippet)
+- [x] **Step 1: Replace the Step 0 placeholder with the full implementation**
 
 Replace the `## Step 0: Detect verb and extract ticket ID` section in `~/.claude/skills/vfs-kickoff/SKILL.md` with this *placeholder* version first:
 
@@ -264,12 +264,12 @@ If `intent=kickoff`, proceed to Step 1 (workspace name resolution).
 If `intent=resume`, jump to the Resume branch.
 ````
 
-- [ ] **Step 2: Run the asserts to verify they pass**
+- [x] **Step 2: Run the asserts to verify they pass**
 
 ```bash
 python3 -c "
 import re
-VERB_PHRASE_RE = re.compile(r'\\blets?\\b\\s+(kick\\s+off|pick\\s+up|start|begin|resume)\\b', re.IGNORECASE)
+VERB_PHRASE_RE = re.compile(r'\\blet\\'?s?\\b\\s+(kick\\s+off|pick\\s+up|start|begin|resume)\\b', re.IGNORECASE)
 PRIMARY_RE = re.compile(r'[A-Z][A-Z0-9]+-\\d+')
 ASANA_RE = re.compile(r'\\b\\d{10,}\\b')
 
@@ -289,16 +289,9 @@ print('OK')
 "
 ```
 
-Expected: `OK`. If AssertionError: the regex or logic is wrong in Step 1's snippet; fix and re-run.
+Result: `OK` ✓
 
-- [ ] **Step 3: Commit**
-
-```bash
-cd /Users/dirkknibbe/vfs-memory
-git add docs/superpowers/plans/2026-05-27-vfs-kickoff-implementation.md
-git -c gpg.program=gpg commit -m "docs(plan): tick Task 2 — phrase parsing in vfs-kickoff"
-git push
-```
+- [x] **Step 3: Commit**
 
 ---
 
