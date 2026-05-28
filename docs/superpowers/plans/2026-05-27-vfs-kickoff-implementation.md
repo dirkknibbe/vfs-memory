@@ -691,7 +691,7 @@ git push
 
 **Success criterion:** after running, the four scaffold keys exist in `vfs.persistent` with valid frontmatter. The transparency report prints in the exact format the spec specifies (5 examples in the spec, "Transparency report" section). Falsifiable by smoke tests #1, #5 in Task 8.
 
-- [ ] **Step 1: Replace `## Step 5: Create the scaffold (kickoff only)`**
+- [x] **Step 1: Replace `## Step 5: Create the scaffold (kickoff only)`**
 
 ````markdown
 ## Step 5: Create the scaffold (kickoff only)
@@ -840,7 +840,7 @@ selected: (n/a)
 ```
 ````
 
-- [ ] **Step 2: Verify by inspecting the SKILL.md**
+- [x] **Step 2: Verify by inspecting the SKILL.md**
 
 ```bash
 grep -c "## Step 5: Create the scaffold" ~/.claude/skills/vfs-kickoff/SKILL.md     # expect: 1
@@ -848,11 +848,11 @@ grep -c "## Step 6: Print transparency report" ~/.claude/skills/vfs-kickoff/SKIL
 grep -c "(Task 6 fills this in)" ~/.claude/skills/vfs-kickoff/SKILL.md             # expect: 0
 ```
 
-- [ ] **Step 3: Verify scaffold compose is shell-safe**
+- [x] **Step 3: Verify scaffold compose is shell-safe**
 
 The textwrap + f-string approach handles strings cleanly, but ticket descriptions can contain triple-quotes or backticks. The smoke tests (Task 8 #1) will catch this in real use. If a real ticket description breaks the snippet, switch from `textwrap.dedent` to a list-of-lines + `"\n".join` shape.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 cd /Users/dirkknibbe/vfs-memory
