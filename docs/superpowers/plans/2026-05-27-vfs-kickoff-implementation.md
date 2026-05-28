@@ -478,7 +478,7 @@ git push
 
 This is the largest task. It is mostly *prose* instructing Claude how to do tool discovery + parallel tool calls — there is no Python helper that can replace `ToolSearch` because the available MCP tool names are runtime-discovered.
 
-- [ ] **Step 1: Replace `## Step 2: Discover connected tracker MCPs`**
+- [x] **Step 1: Replace `## Step 2: Discover connected tracker MCPs`**
 
 ````markdown
 ## Step 2: Discover connected tracker MCPs
@@ -596,7 +596,7 @@ Save `selected` (with normalized fields) for Steps 4 and 5.
 **Performance note:** with three connected trackers, this step does 3 parallel calls (~1s round trip each). In practice the user has 1-2 trackers connected, so it's faster. The visibility of all three results (via the transparency report in Step 6) is worth the cost.
 ````
 
-- [ ] **Step 2: Verify by inspecting the SKILL.md**
+- [x] **Step 2: Verify by inspecting the SKILL.md**
 
 ```bash
 grep -c "## Step 2: Discover connected tracker MCPs" ~/.claude/skills/vfs-kickoff/SKILL.md   # expect: 1
@@ -604,11 +604,11 @@ grep -c "## Step 3: Fetch primary ticket" ~/.claude/skills/vfs-kickoff/SKILL.md 
 grep -c "(Task 4 fills this in)" ~/.claude/skills/vfs-kickoff/SKILL.md                       # expect: 0 (both placeholders gone)
 ```
 
-- [ ] **Step 3: Live integration test deferred to Task 8 smoke tests**
+- [x] **Step 3: Live integration test deferred to Task 8 smoke tests**
 
 There is no isolated unit test for tool discovery — the Bash environment doesn't have access to `ToolSearch`. The full path is exercised by smoke tests #1, #2, #4 in Task 8. Defer.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 cd /Users/dirkknibbe/vfs-memory
