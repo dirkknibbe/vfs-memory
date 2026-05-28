@@ -870,7 +870,7 @@ git push
 
 **Success criterion:** `lets resume <X>` reads an existing workspace, surfaces a tight summary (title/status, parent if present, plan body, scratchpad tail, decisions list), and prints a one-liner. Errors clearly if the workspace doesn't exist. Falsifiable by smoke tests #6, #7 in Task 8.
 
-- [ ] **Step 1: Replace `## Resume branch`**
+- [x] **Step 1: Replace `## Resume branch`**
 
 ````markdown
 ## Resume branch
@@ -889,6 +889,7 @@ Abort.
 import json
 import sys
 from agent_vfs import VFS
+from agent_vfs.types import NotFoundError
 
 WORKSPACE_NAME = "<ticket_id from Step 0>"
 
@@ -898,7 +899,7 @@ prefix = f"tickets/{WORKSPACE_NAME}"
 # Existence probe: ticket.md is the canonical "workspace exists" marker.
 try:
     ticket_body, ticket_fm = v.persistent.read(f"{prefix}/ticket.md")
-except FileNotFoundError:
+except NotFoundError:
     print(f"missing=true")
     print(f"hint=no workspace at tickets/{WORKSPACE_NAME}/ — did you mean 'lets kick off {WORKSPACE_NAME}'?")
     sys.exit(0)
@@ -915,6 +916,7 @@ If `missing=true`: print the hint message to the user and abort. Do not proceed 
 # /tmp/vfs_kickoff_resume_read.py (continuation; assumes Step A succeeded)
 import json
 from agent_vfs import VFS
+from agent_vfs.types import NotFoundError
 
 WORKSPACE_NAME = "<ticket_id from Step 0>"
 v = VFS(writer_id="claude")
@@ -925,13 +927,13 @@ ticket_body, ticket_fm = v.persistent.read(f"{prefix}/ticket.md")
 try:
     plan_body, _ = v.persistent.read(f"{prefix}/plan.md")
     plan_body = plan_body.strip()
-except FileNotFoundError:
+except NotFoundError:
     plan_body = ""
 
 try:
     scratch_body, _ = v.persistent.read(f"{prefix}/scratchpad.md")
     scratch_tail = "\n".join(scratch_body.splitlines()[-50:]).strip()
-except FileNotFoundError:
+except NotFoundError:
     scratch_tail = ""
 
 decisions_entries, _ = v.persistent.list(prefix=f"{prefix}/decisions/")
@@ -986,7 +988,7 @@ For the `last scratched <iso-timestamp>` field, use the frontmatter `ts` field o
 If etag/ts access is awkward, fall back to: `last scratched (unknown)`.
 ````
 
-- [ ] **Step 2: Verify by inspecting the SKILL.md**
+- [x] **Step 2: Verify by inspecting the SKILL.md**
 
 ```bash
 grep -c "### Step A: Locate workspace" ~/.claude/skills/vfs-kickoff/SKILL.md         # expect: 1
@@ -994,7 +996,7 @@ grep -c "### Step D: Print one-liner" ~/.claude/skills/vfs-kickoff/SKILL.md     
 grep -c "(Task 7 fills" ~/.claude/skills/vfs-kickoff/SKILL.md                        # expect: 0
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 cd /Users/dirkknibbe/vfs-memory
