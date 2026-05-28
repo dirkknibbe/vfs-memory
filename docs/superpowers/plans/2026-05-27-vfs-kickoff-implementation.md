@@ -95,14 +95,14 @@ Expected: push succeeds, PR #5 updated.
 
 **Success criterion:** the skill is discoverable. Restarting Claude Code (or starting a fresh session) shows `vfs-kickoff` in the available-skills list. Smoke test #0 (implicit, not in the spec's 11): typing a trigger phrase causes Claude to identify the skill as applicable.
 
-- [ ] **Step 1: Create the directory**
+- [x] **Step 1: Create the directory**
 
 ```bash
 mkdir -p ~/.claude/skills/vfs-kickoff
 ls -ld ~/.claude/skills/vfs-kickoff      # expect: directory exists
 ```
 
-- [ ] **Step 2: Write the bootstrap SKILL.md (frontmatter + section skeleton)**
+- [x] **Step 2: Write the bootstrap SKILL.md (frontmatter + section skeleton)**
 
 Create `~/.claude/skills/vfs-kickoff/SKILL.md` with this exact content. Tasks 2-8 will replace the placeholder section bodies with real instructions/code.
 
@@ -163,13 +163,13 @@ Scaffold a per-ticket VFS workspace, or resume an existing one. See `docs/superp
 (Task 8 fills this in with the 11 cases from the spec.)
 ````
 
-- [ ] **Step 3: Verify the skill is discoverable**
+- [x] **Step 3: Verify the skill is discoverable**
 
 Open a NEW Claude Code session (current sessions don't reload skills). Confirm `vfs-kickoff` appears in the system-reminder skill list at session start.
 
 Alternative quick check: `cat ~/.claude/skills/vfs-kickoff/SKILL.md | head -5` should show the frontmatter.
 
-- [ ] **Step 4: Tick the box in this plan + commit**
+- [x] **Step 4: Tick the box in this plan + commit**
 
 ```bash
 cd /Users/dirkknibbe/vfs-memory
