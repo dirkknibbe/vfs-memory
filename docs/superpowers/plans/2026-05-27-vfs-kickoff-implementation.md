@@ -212,7 +212,7 @@ PRIMARY_RE = re.compile(r"[A-Z][A-Z0-9]+-\d+")     # Jira / Linear: ENG-1234, PR
 ASANA_RE = re.compile(r"\b\d{10,}\b")              # Asana: bare 10+-digit numeric
 
 VERB_PHRASE_RE = re.compile(
-    r"\blets?\b\s+(kick\s+off|pick\s+up|start|begin|resume)\b",
+    r"\blet'?s?\b\s+(kick\s+off|pick\s+up|start|begin|resume)\b",
     re.IGNORECASE,
 )
 
