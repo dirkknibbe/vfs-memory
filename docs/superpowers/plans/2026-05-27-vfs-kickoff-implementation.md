@@ -626,7 +626,7 @@ git push
 
 **Success criterion:** when the primary fetch in Step 3 returned a `parent_id`, fire one additional MCP call to the same tracker, normalize the response, and populate `parent_*` fields. When `parent_id` is null, skip; when the fetch errors, leave parent fields null and capture the error reason for the transparency report. Falsifiable by smoke tests #9, #10, #11 in Task 8.
 
-- [ ] **Step 1: Replace `## Step 4: Fetch parent ticket (kickoff only)`**
+- [x] **Step 1: Replace `## Step 4: Fetch parent ticket (kickoff only)`**
 
 ````markdown
 ## Step 4: Fetch parent ticket (kickoff only)
@@ -666,14 +666,14 @@ If not fetched (error or returned-not-found), `parent_block` fields are all `nul
 **No cross-tracker fetch.** If a tracker exposes a `parent.tracker` field that differs from the winning tracker (extremely rare, e.g. Asana → Jira parent relation), do not chase it. Treat as no-parent.
 ````
 
-- [ ] **Step 2: Verify by inspecting the SKILL.md**
+- [x] **Step 2: Verify by inspecting the SKILL.md**
 
 ```bash
 grep -c "## Step 4: Fetch parent ticket" ~/.claude/skills/vfs-kickoff/SKILL.md       # expect: 1
 grep -c "(Task 5 fills this in)" ~/.claude/skills/vfs-kickoff/SKILL.md               # expect: 0
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 cd /Users/dirkknibbe/vfs-memory
