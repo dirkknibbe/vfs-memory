@@ -6,11 +6,19 @@ on:
 
 jobs:
   claude-review:
-    # Only run on PRs from the same repo (not forks). GitHub already
-    # strips secrets from fork-PR contexts via the `pull_request` event,
-    # but the explicit gate makes the intent visible and shields against
-    # future event-type drift.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Skip:
+    # - Fork PRs. GitHub strips secrets from fork-PR contexts via the
+    #   `pull_request` event, but the explicit gate is intent-visible.
+    # - Bot PRs (Dependabot, Renovate, etc.). They open from same-repo
+    #   branches, so the fork gate doesn't catch them. The action's
+    #   built-in non-human-actor refusal would catch them downstream, but
+    #   only after spinning up a runner and installing the JS deps. And
+    #   on Dependabot-triggered runs GitHub injects Dependabot secrets
+    #   rather than Actions secrets, so CLAUDE_CODE_OAUTH_TOKEN isn't
+    #   available anyway.
+    if: |
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.type != 'Bot'
 
     runs-on: ubuntu-latest
     permissions:
