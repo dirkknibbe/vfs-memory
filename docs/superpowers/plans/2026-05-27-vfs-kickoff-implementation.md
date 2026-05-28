@@ -1015,7 +1015,7 @@ git push
 
 **Success criterion:** all 11 smoke tests pass in the user's actual environment. If any fail, capture the failure and either patch the skill (loop back to the relevant earlier task) OR add a TODO to the plan with the discrepancy.
 
-- [ ] **Step 1: Replace `## Smoke test checklist`**
+- [x] **Step 1: Replace `## Smoke test checklist`**
 
 ````markdown
 ## Smoke test checklist
