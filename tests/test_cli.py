@@ -24,7 +24,11 @@ def _vfs(*args, cwd=None, env=None, input=None):
 def test_version(tmp_path):
     r = _vfs("version")
     assert r.returncode == 0
-    assert "1.0.0" in r.stdout
+    # Sourced from pyproject.toml (and agent_vfs/__init__.py — see
+    # test_public_api.py for the consistency guard).
+    import agent_vfs
+
+    assert agent_vfs.__version__ in r.stdout
 
 
 def test_init_basic(tmp_path):
