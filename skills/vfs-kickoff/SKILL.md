@@ -1,112 +1,3 @@
-# vfs-kickoff Skill Implementation Plan
-
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
-**Goal:** Implement the `vfs-kickoff` Claude Code skill at `~/.claude/skills/vfs-kickoff/SKILL.md`, per the design spec at `docs/superpowers/specs/2026-05-27-vfs-kickoff-skill-design.md`. Skill scaffolds a per-ticket workspace inside `.vfs/persistent/tickets/<name>/` on phrases like `lets kick off ENG-1234`, populates it from any auto-detected tracker MCP (Atlassian / Linear / Asana, including a one-level parent fetch), and provides a `lets resume <name>` verb for picking back up.
-
-**Architecture:** Single Markdown file with YAML frontmatter + step-by-step prose + embedded Python snippets. Same shape as `~/.claude/skills/vfs-remember/SKILL.md`. Python snippets are inline in the SKILL.md prose — Claude writes each to a temp file (`/tmp/vfs_kickoff_<step>.py`) and executes via the Bash tool. Data flows between snippets through stdout `key=value` lines that Claude reads and threads into the next snippet's input strings.
-
-**Tech Stack:** Markdown, Python 3.9+ (stdlib + `agent-vfs` library), git CLI for repo detection, MCP tool discovery via the `ToolSearch` tool.
-
----
-
-## Important context
-
-**Two artifact locations:**
-- **The skill file** lives at `~/.claude/skills/vfs-kickoff/SKILL.md` (user-global, NOT inside the `vfs-memory` repo). Skill files are not versioned by git in this user's setup — no per-task commits of the skill file itself.
-- **This plan** lives at `docs/superpowers/plans/2026-05-27-vfs-kickoff-implementation.md` inside the `vfs-memory` repo. The plan checkbox state IS committed (per task) so progress is durable across sessions.
-
-**Optional vendoring (decide at end):** copy the finished SKILL.md into `vfs-memory/skills/vfs-kickoff/SKILL.md` as a backup/reference. Out of scope for early tasks; see Task 8.
-
-**No Claude co-author trailer** on any commit this plan produces. User's global rule.
-
-**Personal-tool framing:** the user is the only consumer. No pytest test suite. No CI. The 11 smoke tests in the spec are the test plan; they're run manually by the user (or by the agent dispatched to execute this plan).
-
-**Spec drift discipline:** if any task here doesn't match the spec, STOP and ask the user. Do not silently deviate.
-
----
-
-## File Structure
-
-| Path | Role | Created in task |
-|---|---|---|
-| `~/.claude/skills/vfs-kickoff/SKILL.md` | The skill itself: YAML frontmatter + prose + embedded Python snippets | Task 1 (bootstrap), grown by Tasks 2-7 |
-| `docs/superpowers/plans/2026-05-27-vfs-kickoff-implementation.md` | This plan; checkboxes ticked + committed per task | Task 0 (committed once at planning time) |
-| `/tmp/vfs_kickoff_*.py` | Ephemeral execution helpers (one per Python snippet in SKILL.md). Claude writes + executes at skill-invocation time. NOT versioned. | Runtime |
-| `<project>/.vfs/persistent/tickets/<workspace>/{ticket.md,plan.md,scratchpad.md,decisions/}` | The actual scaffold the skill produces in the project. NOT created by this plan; created at first skill invocation. | Runtime |
-
-**Skill body structure** (the final SKILL.md will have these sections, in this order, added by the tasks below):
-
-```
-YAML frontmatter (name, description)              ← Task 1
-# vfs-kickoff (H1 + one-line summary)             ← Task 1
-## Step 0: Detect verb and extract ticket ID      ← Task 2
-## Step 1: Resolve workspace name                  ← Task 3
-## Step 2: Discover connected tracker MCPs         ← Task 4
-## Step 3: Fetch primary ticket (kickoff only)     ← Task 4
-## Step 4: Fetch parent ticket (kickoff only)      ← Task 5
-## Step 5: Create the scaffold (kickoff only)      ← Task 6
-## Step 6: Print transparency report (kickoff)     ← Task 6
-## Step A: Locate workspace (resume only)          ← Task 7
-## Step B: Read files + decisions list (resume)    ← Task 7
-## Step C: Surface summary (resume)                ← Task 7
-## Step D: Print one-liner (resume)                ← Task 7
-## Smoke test checklist                            ← Task 8
-```
-
----
-
-## Task 0: Commit the plan to its own branch
-
-**Files:**
-- Create: `docs/superpowers/plans/2026-05-27-vfs-kickoff-implementation.md` (this file)
-
-Already on branch `docs/spec-vfs-kickoff-skill` from the spec PR (#5). Plan rides the same PR so spec + plan land together.
-
-- [x] **Step 1: Verify branch**
-
-```bash
-cd /Users/dirkknibbe/vfs-memory
-git status                                  # expect: on docs/spec-vfs-kickoff-skill, clean
-git log --oneline | head -3                 # expect: spec commits at top
-```
-
-- [x] **Step 2: Commit the plan**
-
-```bash
-cd /Users/dirkknibbe/vfs-memory
-git add docs/superpowers/plans/2026-05-27-vfs-kickoff-implementation.md
-git -c gpg.program=gpg commit -m "docs(plan): vfs-kickoff skill implementation plan
-
-Companion to docs/superpowers/specs/2026-05-27-vfs-kickoff-skill-design.md.
-8 tasks: bootstrap → phrase parsing → name resolution → MCP fetch →
-parent fetch → scaffold writes + report → resume verb → smoke tests."
-git push 2>&1 | tail -3
-```
-
-Expected: push succeeds, PR #5 updated.
-
----
-
-## Task 1: Bootstrap the skill file with frontmatter and skeleton
-
-**Files:**
-- Create: `~/.claude/skills/vfs-kickoff/SKILL.md`
-
-**Success criterion:** the skill is discoverable. Restarting Claude Code (or starting a fresh session) shows `vfs-kickoff` in the available-skills list. Smoke test #0 (implicit, not in the spec's 11): typing a trigger phrase causes Claude to identify the skill as applicable.
-
-- [x] **Step 1: Create the directory**
-
-```bash
-mkdir -p ~/.claude/skills/vfs-kickoff
-ls -ld ~/.claude/skills/vfs-kickoff      # expect: directory exists
-```
-
-- [x] **Step 2: Write the bootstrap SKILL.md (frontmatter + section skeleton)**
-
-Create `~/.claude/skills/vfs-kickoff/SKILL.md` with this exact content. Tasks 2-8 will replace the placeholder section bodies with real instructions/code.
-
-````markdown
 ---
 name: vfs-kickoff
 description: Use when the user is starting work on a fresh piece — phrases like "lets kick off ENG-1234", "let's kick off PROJ-77", "lets start ABC-456", "lets start" (with no ticket — uses repo-based fallback), or when picking back up — "lets resume ENG-1234". Do NOT use for starting a process / dev server / command / unrelated activity (e.g. "let's start the server", "let's kick off the deploy"). Strong signal that this skill applies: the phrase is followed by a ticket-ID-shaped token (e.g. `[A-Z][A-Z0-9]+-\d+`) or by nothing at all (no-ticket fallback path). Scaffolds a per-ticket workspace under `.vfs/persistent/tickets/<workspace_name>/`, auto-detects connected tracker MCPs (Atlassian / Linear / Asana) and populates the workspace from the ticket. Resume verb does a strict local read of an existing workspace, no MCP re-fetch.
@@ -126,73 +17,6 @@ Scaffold a per-ticket VFS workspace, or resume an existing one. See `docs/superp
 2. The `agent_vfs` Python library is importable (`python3 -c "import agent_vfs"`). If not, refuse with:
    > `agent-vfs not installed. Run 'pip install agent-vfs' or 'pipx install agent-vfs' first.`
 
-## Step 0: Detect verb and extract ticket ID
-
-(Task 2 fills this in.)
-
-## Step 1: Resolve workspace name
-
-(Task 3 fills this in.)
-
-## Step 2: Discover connected tracker MCPs
-
-(Task 4 fills this in.)
-
-## Step 3: Fetch primary ticket (kickoff only)
-
-(Task 4 fills this in.)
-
-## Step 4: Fetch parent ticket (kickoff only)
-
-(Task 5 fills this in.)
-
-## Step 5: Create the scaffold (kickoff only)
-
-(Task 6 fills this in.)
-
-## Step 6: Print transparency report (kickoff)
-
-(Task 6 fills this in.)
-
-## Resume branch
-
-(Task 7 fills in Steps A-D.)
-
-## Smoke test checklist
-
-(Task 8 fills this in with the 11 cases from the spec.)
-````
-
-- [x] **Step 3: Verify the skill is discoverable**
-
-Open a NEW Claude Code session (current sessions don't reload skills). Confirm `vfs-kickoff` appears in the system-reminder skill list at session start.
-
-Alternative quick check: `cat ~/.claude/skills/vfs-kickoff/SKILL.md | head -5` should show the frontmatter.
-
-- [x] **Step 4: Tick the box in this plan + commit**
-
-```bash
-cd /Users/dirkknibbe/vfs-memory
-# After ticking the Task 1 checkbox above:
-git add docs/superpowers/plans/2026-05-27-vfs-kickoff-implementation.md
-git -c gpg.program=gpg commit -m "docs(plan): tick Task 1 — skill bootstrap"
-git push
-```
-
----
-
-## Task 2: Phrase parsing — verb detection + ticket-ID extraction
-
-**Files:**
-- Modify: `~/.claude/skills/vfs-kickoff/SKILL.md` — replace the `## Step 0` placeholder
-
-**Success criterion:** the snippet below, with its inline `assert` block at the bottom, runs without AssertionError. This is the unit test for phrase parsing.
-
-- [x] **Step 1: Replace the Step 0 placeholder with the full implementation**
-
-Replace the `## Step 0: Detect verb and extract ticket ID` section in `~/.claude/skills/vfs-kickoff/SKILL.md` with this *placeholder* version first:
-
-````markdown
 ## Step 0: Detect verb and extract ticket ID
 
 Parse the triggering user phrase. Save the snippet below to `/tmp/vfs_kickoff_parse.py` and run it. The inline asserts at the bottom MUST PASS — if they raise AssertionError, the skill is broken.
@@ -261,49 +85,7 @@ print(f"ticket_id={ticket_id or ''}")
 
 If `intent=kickoff`, proceed to Step 1 (workspace name resolution).
 If `intent=resume`, jump to the Resume branch.
-````
 
-- [x] **Step 2: Run the asserts to verify they pass**
-
-```bash
-python3 -c "
-import re
-VERB_PHRASE_RE = re.compile(r'\\blet\\'?s?\\b\\s+(kick\\s+off|pick\\s+up|start|begin|resume)\\b', re.IGNORECASE)
-PRIMARY_RE = re.compile(r'[A-Z][A-Z0-9]+-\\d+')
-ASANA_RE = re.compile(r'\\b\\d{10,}\\b')
-
-def parse_phrase(phrase):
-    m = VERB_PHRASE_RE.search(phrase)
-    if not m: return (None, None)
-    raw = re.sub(r'\\s+', ' ', m.group(1).lower())
-    intent = 'kickoff' if raw in {'kick off','start','begin'} else 'resume' if raw in {'resume','pick up'} else None
-    tail = phrase[m.end():]
-    pm = PRIMARY_RE.search(tail) or ASANA_RE.search(tail)
-    return (intent, pm.group(0) if pm else None)
-
-assert parse_phrase('lets kick off ENG-1234') == ('kickoff','ENG-1234')
-assert parse_phrase(\"let's resume ENG-1234\") == ('resume','ENG-1234')
-assert parse_phrase('hello world') == (None,None)
-print('OK')
-"
-```
-
-Result: `OK` ✓
-
-- [x] **Step 3: Commit**
-
----
-
-## Task 3: Workspace-name resolution chain
-
-**Files:**
-- Modify: `~/.claude/skills/vfs-kickoff/SKILL.md` — replace the `## Step 1` placeholder
-
-**Success criterion:** for each of the three branches (ticket-ID given, repo-detected, totally local), the snippet outputs a sensible workspace name. Inline asserts cover the repo-detection logic. The counter-scan path is harder to unit-test inline (needs a real VFS) — covered by smoke tests 3 and (implicitly) any test that re-runs Task 6.
-
-- [x] **Step 1: Replace `## Step 1: Resolve workspace name` in SKILL.md**
-
-````markdown
 ## Step 1: Resolve workspace name
 
 Given the parsed `(intent, ticket_id)` from Step 0, decide the workspace name. Three branches:
@@ -427,62 +209,7 @@ Validate `^[a-z0-9-]{1,64}$`. Re-prompt once on invalid. Abort cleanly with `can
 > `tickets/<workspace_name>/ already exists. Use 'lets resume <workspace_name>' to pick it back up.`
 
 Abort the skill.
-````
 
-- [x] **Step 2: Verify the URL parsing + host recognition unit tests pass**
-
-```bash
-python3 -c "
-import re
-SSH_REMOTE_RE = re.compile(r'^(?:git@|ssh://git@)([^/:]+)[:/](.+?)(?:\\.git)?$')
-HTTPS_REMOTE_RE = re.compile(r'^https?://([^/]+)/(.+?)(?:\\.git)?/?$')
-def parse_remote(url):
-    for pat in (SSH_REMOTE_RE, HTTPS_REMOTE_RE):
-        m = pat.match(url.strip())
-        if m: return (m.group(1), m.group(2))
-    return (None, None)
-assert parse_remote('git@github.com:dirkknibbe/vfs-memory.git') == ('github.com','dirkknibbe/vfs-memory')
-assert parse_remote('https://github.com/dirkknibbe/vfs-memory.git') == ('github.com','dirkknibbe/vfs-memory')
-assert parse_remote('git@bitbucket.org:foo/bar.git') == ('bitbucket.org','foo/bar')
-assert parse_remote('git@gitea.example.com:foo/bar.git') == ('gitea.example.com','foo/bar')
-print('OK')
-"
-```
-
-Expected: `OK`. If failure: regex is broken; fix the snippet in the SKILL.md.
-
-- [x] **Step 3: Verify the live repo case end-to-end**
-
-```bash
-cd /Users/dirkknibbe/vfs-memory
-git remote get-url origin       # expect: github URL
-```
-
-This is what `repo_name_from_origin()` calls. Confirms git is wired correctly.
-
-- [x] **Step 4: Commit**
-
-```bash
-cd /Users/dirkknibbe/vfs-memory
-git add docs/superpowers/plans/2026-05-27-vfs-kickoff-implementation.md
-git -c gpg.program=gpg commit -m "docs(plan): tick Task 3 — workspace-name resolution"
-git push
-```
-
----
-
-## Task 4: MCP discovery + primary ticket fetch
-
-**Files:**
-- Modify: `~/.claude/skills/vfs-kickoff/SKILL.md` — replace the `## Step 2` and `## Step 3` placeholders
-
-**Success criterion:** when invoked with a real ticket ID against a connected tracker MCP, the skill resolves the right tool name via `ToolSearch` and returns a populated ticket payload. Falsifiable by smoke test #1 (kickoff with MCP hit) and #2 (kickoff with no MCP — should report `hit in: (none)`).
-
-This is the largest task. It is mostly *prose* instructing Claude how to do tool discovery + parallel tool calls — there is no Python helper that can replace `ToolSearch` because the available MCP tool names are runtime-discovered.
-
-- [x] **Step 1: Replace `## Step 2: Discover connected tracker MCPs`**
-
-````markdown
 ## Step 2: Discover connected tracker MCPs
 
 This step is prose-driven, not Python. You (Claude) use `ToolSearch` to find the actual MCP tool names for each tracker.
@@ -596,41 +323,7 @@ def normalize(tracker: str, payload: dict) -> dict:
 Save `selected` (with normalized fields) for Steps 4 and 5.
 
 **Performance note:** with three connected trackers, this step does 3 parallel calls (~1s round trip each). In practice the user has 1-2 trackers connected, so it's faster. The visibility of all three results (via the transparency report in Step 6) is worth the cost.
-````
 
-- [x] **Step 2: Verify by inspecting the SKILL.md**
-
-```bash
-grep -c "## Step 2: Discover connected tracker MCPs" ~/.claude/skills/vfs-kickoff/SKILL.md   # expect: 1
-grep -c "## Step 3: Fetch primary ticket" ~/.claude/skills/vfs-kickoff/SKILL.md              # expect: 1
-grep -c "(Task 4 fills this in)" ~/.claude/skills/vfs-kickoff/SKILL.md                       # expect: 0 (both placeholders gone)
-```
-
-- [x] **Step 3: Live integration test deferred to Task 8 smoke tests**
-
-There is no isolated unit test for tool discovery — the Bash environment doesn't have access to `ToolSearch`. The full path is exercised by smoke tests #1, #2, #4 in Task 8. Defer.
-
-- [x] **Step 4: Commit**
-
-```bash
-cd /Users/dirkknibbe/vfs-memory
-git add docs/superpowers/plans/2026-05-27-vfs-kickoff-implementation.md
-git -c gpg.program=gpg commit -m "docs(plan): tick Task 4 — MCP discovery + primary fetch"
-git push
-```
-
----
-
-## Task 5: Parent ticket fetch
-
-**Files:**
-- Modify: `~/.claude/skills/vfs-kickoff/SKILL.md` — replace the `## Step 4` placeholder
-
-**Success criterion:** when the primary fetch in Step 3 returned a `parent_id`, fire one additional MCP call to the same tracker, normalize the response, and populate `parent_*` fields. When `parent_id` is null, skip; when the fetch errors, leave parent fields null and capture the error reason for the transparency report. Falsifiable by smoke tests #9, #10, #11 in Task 8.
-
-- [x] **Step 1: Replace `## Step 4: Fetch parent ticket (kickoff only)`**
-
-````markdown
 ## Step 4: Fetch parent ticket (kickoff only)
 
 Skip this step entirely if any of:
@@ -666,36 +359,7 @@ If not fetched (error or returned-not-found), `parent_block` fields are all `nul
 **No recursion.** Do not fetch the parent's parent. Bounded cost: 0 or 1 additional MCP call per kickoff.
 
 **No cross-tracker fetch.** If a tracker exposes a `parent.tracker` field that differs from the winning tracker (extremely rare, e.g. Asana → Jira parent relation), do not chase it. Treat as no-parent.
-````
 
-- [x] **Step 2: Verify by inspecting the SKILL.md**
-
-```bash
-grep -c "## Step 4: Fetch parent ticket" ~/.claude/skills/vfs-kickoff/SKILL.md       # expect: 1
-grep -c "(Task 5 fills this in)" ~/.claude/skills/vfs-kickoff/SKILL.md               # expect: 0
-```
-
-- [x] **Step 3: Commit**
-
-```bash
-cd /Users/dirkknibbe/vfs-memory
-git add docs/superpowers/plans/2026-05-27-vfs-kickoff-implementation.md
-git -c gpg.program=gpg commit -m "docs(plan): tick Task 5 — parent ticket fetch"
-git push
-```
-
----
-
-## Task 6: Scaffold writes + transparency report
-
-**Files:**
-- Modify: `~/.claude/skills/vfs-kickoff/SKILL.md` — replace the `## Step 5` and `## Step 6` placeholders
-
-**Success criterion:** after running, the four scaffold keys exist in `vfs.persistent` with valid frontmatter. The transparency report prints in the exact format the spec specifies (5 examples in the spec, "Transparency report" section). Falsifiable by smoke tests #1, #5 in Task 8.
-
-- [x] **Step 1: Replace `## Step 5: Create the scaffold (kickoff only)`**
-
-````markdown
 ## Step 5: Create the scaffold (kickoff only)
 
 Skip if `intent == "resume"` — resume never writes.
@@ -858,41 +522,7 @@ kicked off tickets/vfs-memory-task-3/
 trackers queried: (no ticket ID — repo fallback)
 selected: (n/a)
 ```
-````
 
-- [x] **Step 2: Verify by inspecting the SKILL.md**
-
-```bash
-grep -c "## Step 5: Create the scaffold" ~/.claude/skills/vfs-kickoff/SKILL.md     # expect: 1
-grep -c "## Step 6: Print transparency report" ~/.claude/skills/vfs-kickoff/SKILL.md  # expect: 1
-grep -c "(Task 6 fills this in)" ~/.claude/skills/vfs-kickoff/SKILL.md             # expect: 0
-```
-
-- [x] **Step 3: Verify scaffold compose is robust to multi-line descriptions**
-
-Resolved during the first end-to-end smoke test: the original `textwrap.dedent` + f-string + `!r` compose was replaced with a list-of-lines + `"\n".join` shape plus the `_fmval()` helper. This (a) survives multi-line ticket descriptions without corrupting the leading metadata block, and (b) emits clean YAML-ish values (`null` for missing, no Python `repr` quotes) so the resume parser round-trips them. Validated against a simulated MCP-hit payload with a multi-line description and a colon-containing title.
-
-- [x] **Step 4: Commit**
-
-```bash
-cd /Users/dirkknibbe/vfs-memory
-git add docs/superpowers/plans/2026-05-27-vfs-kickoff-implementation.md
-git -c gpg.program=gpg commit -m "docs(plan): tick Task 6 — scaffold writes + transparency report"
-git push
-```
-
----
-
-## Task 7: Resume verb
-
-**Files:**
-- Modify: `~/.claude/skills/vfs-kickoff/SKILL.md` — replace the `## Resume branch` placeholder
-
-**Success criterion:** `lets resume <X>` reads an existing workspace, surfaces a tight summary (title/status, parent if present, plan body, scratchpad tail, decisions list), and prints a one-liner. Errors clearly if the workspace doesn't exist. Falsifiable by smoke tests #6, #7 in Task 8.
-
-- [x] **Step 1: Replace `## Resume branch`**
-
-````markdown
 ## Resume branch
 
 Triggered when `intent == "resume"` from Step 0. `ticket_id` (or whatever Step 0 extracted) becomes the workspace name to look up.
@@ -1055,38 +685,7 @@ resumed tickets/<WORKSPACE_NAME>/ — <decisions_count> decisions, last scratche
 For the `last scratched <iso-timestamp>` field, use the frontmatter `ts` field of `tickets/<WORKSPACE_NAME>/scratchpad.md` (it's the etag's last-write time managed by VFS). If scratchpad has never been written to since scaffold, use `created_at` from the same frontmatter.
 
 If etag/ts access is awkward, fall back to: `last scratched (unknown)`.
-````
 
-- [x] **Step 2: Verify by inspecting the SKILL.md**
-
-```bash
-grep -c "### Step A: Locate workspace" ~/.claude/skills/vfs-kickoff/SKILL.md         # expect: 1
-grep -c "### Step D: Print one-liner" ~/.claude/skills/vfs-kickoff/SKILL.md          # expect: 1
-grep -c "(Task 7 fills" ~/.claude/skills/vfs-kickoff/SKILL.md                        # expect: 0
-```
-
-- [x] **Step 3: Commit**
-
-```bash
-cd /Users/dirkknibbe/vfs-memory
-git add docs/superpowers/plans/2026-05-27-vfs-kickoff-implementation.md
-git -c gpg.program=gpg commit -m "docs(plan): tick Task 7 — resume verb"
-git push
-```
-
----
-
-## Task 8: Smoke test checklist + finalize
-
-**Files:**
-- Modify: `~/.claude/skills/vfs-kickoff/SKILL.md` — replace the `## Smoke test checklist` placeholder, append the spec's 11 cases
-- (Optionally) Create: `vfs-memory/skills/vfs-kickoff/SKILL.md` — vendor a copy of the finished skill into the repo, for backup + reviewable diff
-
-**Success criterion:** all 11 smoke tests pass in the user's actual environment. If any fail, capture the failure and either patch the skill (loop back to the relevant earlier task) OR add a TODO to the plan with the discrepancy.
-
-- [x] **Step 1: Replace `## Smoke test checklist`**
-
-````markdown
 ## Smoke test checklist
 
 Run each case manually after non-trivial skill changes. The skill is a Markdown file; there is no automated test harness.
@@ -1125,57 +724,19 @@ After running the suite, append a results block to this file (in SKILL.md) under
 ```
 
 Update on each substantial change.
-````
 
-- [x] **Step 2: Run all 11 smoke tests**
+### Last run: 2026-05-29
 
-For each case 1-11 above: trigger the skill, observe the output, verify against the expected behavior. Capture any failures.
+Validated end-to-end against a live `.vfs/` in the vfs-memory repo. Cases needing a real tracker MCP (1, 9) were exercised with a **simulated** `selected`/`parent` payload fed through the real Step 5 + Step B code, since no Atlassian/Linear/Asana MCP was connected; re-run them against a live MCP when one is available.
 
-Approximate time: 30-60 minutes for the full suite (some cases require setting up specific MCP states).
-
-If any case fails: do NOT mark this task complete. Loop back to the relevant prior task, patch the skill, re-run the failing case.
-
-**Run 2026-05-29 — all 11 pass.** Validated against a live `.vfs/` in the vfs-memory repo (results recorded under `### Last run` in SKILL.md). Cases 1 and 9 (MCP-hit, parent fetch) used a **simulated** `selected`/`parent` payload fed through the real Step 5 + Step B code, because no Atlassian/Linear/Asana MCP was connected — re-run against a live MCP when one is available. This run surfaced and fixed: the missing `VFS` top-level re-export + `__version__` drift (separate commit), the `VFS(writer_id=)` → `$VFS_WRITER` constructor change across all four snippets, and the body-frontmatter design (workspace metadata rides in the body; resume parses it via `parse_body_frontmatter`).
-
-- [x] **Step 3: Decide on vendoring**
-
-**Decision (2026-05-29): YES, vendor it.** Copied `~/.claude/skills/vfs-kickoff/SKILL.md` → `skills/vfs-kickoff/SKILL.md` (742 lines, byte-identical). Keeps the spec + plan + skill trio together in git, diff-reviewable and recoverable. The user-global copy at `~/.claude/skills/vfs-kickoff/` remains the live one Claude Code loads; the vendored copy is the version-controlled backup. **Re-sync the vendored copy whenever the live skill changes** (they can drift otherwise).
-
-Ask the user: should we copy the finished SKILL.md into `vfs-memory/skills/vfs-kickoff/SKILL.md` for backup + git history?
-
-- **If yes:** create the directory, copy the file, commit:
-  ```bash
-  mkdir -p /Users/dirkknibbe/vfs-memory/skills/vfs-kickoff
-  cp ~/.claude/skills/vfs-kickoff/SKILL.md /Users/dirkknibbe/vfs-memory/skills/vfs-kickoff/SKILL.md
-  cd /Users/dirkknibbe/vfs-memory
-  git add skills/vfs-kickoff/SKILL.md
-  git -c gpg.program=gpg commit -m "feat(skill): vendor vfs-kickoff skill into repo"
-  git push
-  ```
-
-- **If no:** the skill lives only in `~/.claude/skills/vfs-kickoff/` and is not versioned. Make a one-line note in the plan that this was the decision.
-
-- [ ] **Step 4: Final commit — plan complete**
-
-```bash
-cd /Users/dirkknibbe/vfs-memory
-git add docs/superpowers/plans/2026-05-27-vfs-kickoff-implementation.md
-git -c gpg.program=gpg commit -m "docs(plan): tick Task 8 — vfs-kickoff implementation complete
-
-All 11 smoke tests passed (see plan for details). Vendored: <yes|no per Step 3>."
-git push
-```
-
-- [ ] **Step 5: Merge the PR**
-
-PR #5 now contains: spec, plan, vendored skill, the agent-vfs public-API fix + regression test, and the `.vfs/` gitignore. **Deferred to the user — they will review the diff on GitHub and merge it themselves.** PR #5 does not touch `.github/workflows/`, so `claude-review` should run normally (unlike the workflow-editing PRs, which trip the app-token gate once — see PR #4's notes).
-
----
-
-## Open questions for the user (resolve before / during Task 8)
-
-1. **Vendoring decision (Task 8 Step 3):** copy finished SKILL.md into vfs-memory repo for version history, or leave it user-global only?
-
-2. **Smoke test MCP availability:** which tracker MCPs are connected today? This determines which smoke tests (1, 8, 9, 10, 11) can actually be exercised vs. deferred to "when an Atlassian/Linear/Asana MCP is set up later".
-
-3. **Tool name discovery confidence:** Task 4's prose says Claude figures out the MCP tool names from `ToolSearch` results. If the actual tool names in the user's MCPs look very different from the table in Task 4 ("Likely tool-name shape"), update the table with the real names as a follow-up patch.
+- [x] 1. Kickoff with MCP hit (simulated payload: colon-in-title, multi-line description)
+- [x] 2. Kickoff with no MCP (stub workspace)
+- [x] 3. Kickoff no-ID, repo recognized (`vfs-memory-task-1`)
+- [x] 4. Kickoff no-ID, no remote (prompt fallback + `^[a-z0-9-]{1,64}$` validation)
+- [x] 5. Kickoff into existing workspace (exists-probe → refuse)
+- [x] 6. Resume existing workspace (title/status/parent surface)
+- [x] 7. Resume missing workspace (hint message)
+- [x] 8. Multi-tracker collision (priority atlassian > linear > asana)
+- [x] 9. Kickoff with parent (simulated: parent block populated, surfaces on resume)
+- [x] 10. Kickoff with no parent (parent fields null)
+- [x] 11. Kickoff where parent fetch errors (workspace still created, parent fields null)
