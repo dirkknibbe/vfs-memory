@@ -370,8 +370,10 @@ def next_task_counter(repo_name: str) -> int:
     of List[Entry] and Optional[str] cursor for pagination. Default max_items=100
     is fine for personal-use scales; paginate if a single repo ever has 100+ workspaces.
     """
+    import os
+    os.environ.setdefault("VFS_WRITER", "claude")
     from agent_vfs import VFS
-    v = VFS(writer_id="claude")
+    v = VFS()
     prefix = f"tickets/{repo_name}-task-"
     entries, _cursor = v.persistent.list(prefix=prefix)
     pat = re.compile(rf"^{re.escape(prefix)}(\d+)(/|$)")
@@ -706,6 +708,8 @@ import json
 import sys
 import textwrap
 from datetime import datetime, timezone
+import os
+os.environ.setdefault("VFS_WRITER", "claude")
 from agent_vfs import VFS
 
 # These come from earlier steps. Hardcode them at runtime via Claude's string-substitution.
@@ -768,7 +772,7 @@ stub = textwrap.dedent(f"""\
     (empty)
     """)
 
-v = VFS(writer_id="claude")
+v = VFS()
 prefix = f"tickets/{WORKSPACE_NAME}"
 
 etag1 = v.persistent.write(f"{prefix}/ticket.md",     fm,   source="agent")
@@ -888,12 +892,14 @@ Abort.
 # /tmp/vfs_kickoff_resume.py
 import json
 import sys
+import os
+os.environ.setdefault("VFS_WRITER", "claude")
 from agent_vfs import VFS
 from agent_vfs.types import NotFoundError
 
 WORKSPACE_NAME = "<ticket_id from Step 0>"
 
-v = VFS(writer_id="claude")
+v = VFS()
 prefix = f"tickets/{WORKSPACE_NAME}"
 
 # Existence probe: ticket.md is the canonical "workspace exists" marker.
@@ -915,11 +921,13 @@ If `missing=true`: print the hint message to the user and abort. Do not proceed 
 ```python
 # /tmp/vfs_kickoff_resume_read.py (continuation; assumes Step A succeeded)
 import json
+import os
+os.environ.setdefault("VFS_WRITER", "claude")
 from agent_vfs import VFS
 from agent_vfs.types import NotFoundError
 
 WORKSPACE_NAME = "<ticket_id from Step 0>"
-v = VFS(writer_id="claude")
+v = VFS()
 prefix = f"tickets/{WORKSPACE_NAME}"
 
 ticket_body, ticket_fm = v.persistent.read(f"{prefix}/ticket.md")
