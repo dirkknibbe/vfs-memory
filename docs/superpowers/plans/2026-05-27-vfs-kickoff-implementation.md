@@ -1127,13 +1127,15 @@ After running the suite, append a results block to this file (in SKILL.md) under
 Update on each substantial change.
 ````
 
-- [ ] **Step 2: Run all 11 smoke tests**
+- [x] **Step 2: Run all 11 smoke tests**
 
 For each case 1-11 above: trigger the skill, observe the output, verify against the expected behavior. Capture any failures.
 
 Approximate time: 30-60 minutes for the full suite (some cases require setting up specific MCP states).
 
 If any case fails: do NOT mark this task complete. Loop back to the relevant prior task, patch the skill, re-run the failing case.
+
+**Run 2026-05-29 — all 11 pass.** Validated against a live `.vfs/` in the vfs-memory repo (results recorded under `### Last run` in SKILL.md). Cases 1 and 9 (MCP-hit, parent fetch) used a **simulated** `selected`/`parent` payload fed through the real Step 5 + Step B code, because no Atlassian/Linear/Asana MCP was connected — re-run against a live MCP when one is available. This run surfaced and fixed: the missing `VFS` top-level re-export + `__version__` drift (separate commit), the `VFS(writer_id=)` → `$VFS_WRITER` constructor change across all four snippets, and the body-frontmatter design (workspace metadata rides in the body; resume parses it via `parse_body_frontmatter`).
 
 - [ ] **Step 3: Decide on vendoring**
 
