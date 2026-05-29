@@ -6,3 +6,6 @@ build/
 dist/
 .venv/
 .coverage
+
+# agent-vfs local memory store (per-project, not versioned)
+.vfs/

@@ -705,12 +705,24 @@ Compose four writes to `vfs.persistent`. Use the snippet below — save to `/tmp
 ```python
 # /tmp/vfs_kickoff_scaffold.py
 import json
-import sys
-import textwrap
 from datetime import datetime, timezone
 import os
 os.environ.setdefault("VFS_WRITER", "claude")
 from agent_vfs import VFS
+
+
+def _fmval(v):
+    """Body-frontmatter scalar: None -> 'null', else a single-line string.
+
+    The scaffold metadata block lives in the file BODY — agent-vfs's own
+    frontmatter is a fixed provenance schema, not a metadata store, so
+    workspace fields ride in the body and resume's parse_body_frontmatter
+    reads them back. Collapse newlines so a multi-line value (e.g. a title
+    pasted with a line break) can't break the line-based parser.
+    """
+    if v is None:
+        return "null"
+    return str(v).replace("\n", " ").replace("\r", " ")
 
 # These come from earlier steps. Hardcode them at runtime via Claude's string-substitution.
 WORKSPACE_NAME = "<workspace_name from Step 1>"
@@ -722,55 +734,59 @@ now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 selected = json.loads(SELECTED_JSON) if SELECTED_JSON.strip() != "null" else None
 parent = json.loads(PARENT_JSON) if PARENT_JSON.strip() != "null" else None
 
-# Compose ticket.md
+# Compose ticket.md. Build line-by-line (not textwrap.dedent + f-string) so a
+# multi-line ticket description can't corrupt the leading metadata block.
 if selected:
     fields = selected["fields"]
-    parent_block = parent or {"id": None, "title": None, "status": None, "url": None}
-    fm = textwrap.dedent(f"""\
-        ---
-        title: {fields['title']!r}
-        ticket_id: {selected['ticket_id']}
-        tracker: {selected['tracker']}
-        status: {fields['status']!r}
-        assignee: {fields['assignee']!r}
-        priority: {fields['priority']!r}
-        labels: {json.dumps(fields['labels'])}
-        source_url: {fields['source_url']!r}
-        parent:
-          id: {parent_block['id']!r}
-          title: {parent_block['title']!r}
-          status: {parent_block['status']!r}
-          url: {parent_block['url']!r}
-        fetched_at: {now_iso}
-        ---
-
-        # {fields['title']}
-
-        {fields['description']}
-        """)
+    pb = parent or {"id": None, "title": None, "status": None, "url": None}
+    fm = "\n".join([
+        "---",
+        f"title: {_fmval(fields['title'])}",
+        f"ticket_id: {_fmval(selected['ticket_id'])}",
+        f"tracker: {_fmval(selected['tracker'])}",
+        f"status: {_fmval(fields['status'])}",
+        f"assignee: {_fmval(fields['assignee'])}",
+        f"priority: {_fmval(fields['priority'])}",
+        f"labels: {json.dumps(fields['labels'])}",
+        f"source_url: {_fmval(fields['source_url'])}",
+        "parent:",
+        f"  id: {_fmval(pb['id'])}",
+        f"  title: {_fmval(pb['title'])}",
+        f"  status: {_fmval(pb['status'])}",
+        f"  url: {_fmval(pb['url'])}",
+        f"fetched_at: {now_iso}",
+        "---",
+        "",
+        f"# {fields['title']}",
+        "",
+        fields["description"] or "",
+        "",
+    ])
 else:
-    fm = textwrap.dedent(f"""\
-        ---
-        workspace: {WORKSPACE_NAME}
-        ticket_id: {TICKET_ID or 'null'}
-        tracker: null
-        created_at: {now_iso}
-        ---
-
-        # {WORKSPACE_NAME}
-
-        _No tracker ticket loaded. Use this file to capture what this work is about._
-        """)
+    fm = "\n".join([
+        "---",
+        f"workspace: {WORKSPACE_NAME}",
+        f"ticket_id: {TICKET_ID or 'null'}",
+        "tracker: null",
+        f"created_at: {now_iso}",
+        "---",
+        "",
+        f"# {WORKSPACE_NAME}",
+        "",
+        "_No tracker ticket loaded. Use this file to capture what this work is about._",
+        "",
+    ])
 
 # Empty stubs
-stub = textwrap.dedent(f"""\
-    ---
-    workspace: {WORKSPACE_NAME}
-    created_at: {now_iso}
-    ---
-
-    (empty)
-    """)
+stub = "\n".join([
+    "---",
+    f"workspace: {WORKSPACE_NAME}",
+    f"created_at: {now_iso}",
+    "---",
+    "",
+    "(empty)",
+    "",
+])
 
 v = VFS()
 prefix = f"tickets/{WORKSPACE_NAME}"
@@ -852,9 +868,9 @@ grep -c "## Step 6: Print transparency report" ~/.claude/skills/vfs-kickoff/SKIL
 grep -c "(Task 6 fills this in)" ~/.claude/skills/vfs-kickoff/SKILL.md             # expect: 0
 ```
 
-- [x] **Step 3: Verify scaffold compose is shell-safe**
+- [x] **Step 3: Verify scaffold compose is robust to multi-line descriptions**
 
-The textwrap + f-string approach handles strings cleanly, but ticket descriptions can contain triple-quotes or backticks. The smoke tests (Task 8 #1) will catch this in real use. If a real ticket description breaks the snippet, switch from `textwrap.dedent` to a list-of-lines + `"\n".join` shape.
+Resolved during the first end-to-end smoke test: the original `textwrap.dedent` + f-string + `!r` compose was replaced with a list-of-lines + `"\n".join` shape plus the `_fmval()` helper. This (a) survives multi-line ticket descriptions without corrupting the leading metadata block, and (b) emits clean YAML-ish values (`null` for missing, no Python `repr` quotes) so the resume parser round-trips them. Validated against a simulated MCP-hit payload with a multi-line description and a colon-containing title.
 
 - [x] **Step 4: Commit**
 
@@ -926,21 +942,65 @@ os.environ.setdefault("VFS_WRITER", "claude")
 from agent_vfs import VFS
 from agent_vfs.types import NotFoundError
 
+
+def parse_body_frontmatter(body):
+    """Parse the leading ---...--- metadata block the scaffold writes into the
+    BODY. agent-vfs's own read() frontmatter is provenance-only (writer, ts,
+    project_slug, ...), so workspace metadata (title, status, parent, ...)
+    lives in the body — see the scaffold's _fmval note in Step 5.
+
+    Returns (meta, rest): flat `key: value` plus a one-level-nested `parent:`
+    block. Values of 'null'/'None'/'' normalize to None. `rest` is the file
+    content after the block (used for the empty-stub checks below).
+    """
+    def _norm(x):
+        return None if x in ("null", "None", "") else x
+    if not body.startswith("---\n"):
+        return {}, body
+    end = body.find("\n---\n", 4)
+    if end == -1:
+        return {}, body
+    block = body[4:end]
+    rest = body[end + len("\n---\n"):]
+    meta, parent = {}, None
+    for line in block.split("\n"):
+        if not line.strip():
+            continue
+        if line.startswith("  ") and parent is not None:
+            k, _, val = line.strip().partition(":")
+            parent[k.strip()] = _norm(val.strip())
+            continue
+        k, _, val = line.partition(":")
+        k, val = k.strip(), val.strip()
+        if k == "parent" and val == "":
+            parent = {}
+            meta["parent"] = parent
+            continue
+        parent = None
+        meta[k] = _norm(val)
+    return meta, rest
+
+
 WORKSPACE_NAME = "<ticket_id from Step 0>"
 v = VFS()
 prefix = f"tickets/{WORKSPACE_NAME}"
 
-ticket_body, ticket_fm = v.persistent.read(f"{prefix}/ticket.md")
+ticket_raw, _prov = v.persistent.read(f"{prefix}/ticket.md")
+meta, _ticket_rest = parse_body_frontmatter(ticket_raw)
 
+# For plan/scratchpad, strip the leading metadata block before the
+# emptiness check — otherwise the block itself reads as "content".
 try:
-    plan_body, _ = v.persistent.read(f"{prefix}/plan.md")
+    plan_raw, _ = v.persistent.read(f"{prefix}/plan.md")
+    _pm, plan_body = parse_body_frontmatter(plan_raw)
     plan_body = plan_body.strip()
 except NotFoundError:
     plan_body = ""
 
 try:
-    scratch_body, _ = v.persistent.read(f"{prefix}/scratchpad.md")
-    scratch_tail = "\n".join(scratch_body.splitlines()[-50:]).strip()
+    scratch_raw, _ = v.persistent.read(f"{prefix}/scratchpad.md")
+    _sm, scratch_rest = parse_body_frontmatter(scratch_raw)
+    scratch_tail = "\n".join(scratch_rest.splitlines()[-50:]).strip()
 except NotFoundError:
     scratch_tail = ""
 
@@ -951,11 +1011,12 @@ decisions = [
     if not e.key.endswith(".gitkeep")
 ]
 
-print(f"title={ticket_fm.get('title') or ticket_fm.get('workspace') or WORKSPACE_NAME}")
-print(f"status={ticket_fm.get('status') or 'n/a'}")
-print(f"parent_id={(ticket_fm.get('parent') or {}).get('id') or ''}")
-print(f"parent_title={(ticket_fm.get('parent') or {}).get('title') or ''}")
-print(f"parent_status={(ticket_fm.get('parent') or {}).get('status') or ''}")
+parent = meta.get("parent") or {}
+print(f"title={meta.get('title') or meta.get('workspace') or WORKSPACE_NAME}")
+print(f"status={meta.get('status') or 'n/a'}")
+print(f"parent_id={parent.get('id') or ''}")
+print(f"parent_title={parent.get('title') or ''}")
+print(f"parent_status={parent.get('status') or ''}")
 print(f"plan_nonempty={'yes' if plan_body and plan_body != '(empty)' else 'no'}")
 print(f"scratch_nonempty={'yes' if scratch_tail and scratch_tail != '(empty)' else 'no'}")
 print(f"decisions_count={len(decisions)}")
