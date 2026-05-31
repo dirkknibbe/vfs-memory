@@ -123,8 +123,15 @@ Scaffold a per-ticket VFS workspace, or resume an existing one. See `docs/superp
 
    No auto-init — surprising silent state. Abort the skill.
 
-2. The `agent_vfs` Python library is importable (`python3 -c "import agent_vfs"`). If not, refuse with:
-   > `agent-vfs not installed. Run 'pip install agent-vfs' or 'pipx install agent-vfs' first.`
+2. The `agent_vfs` Python library is importable — check the SAME way the
+   step snippets import it (from the project root, where a co-located
+   `agent_vfs/` source package OR a `pip install`ed copy both resolve):
+   `cd <project-root> && python3 -c "import agent_vfs"`. If not, refuse with:
+   > `agent-vfs library not importable. Run 'pip install agent-vfs' into the Python that runs the snippets. Note: 'pipx install agent-vfs' only installs the 'vfs' CLI binary — it does NOT make 'import agent_vfs' work.`
+
+   The step snippets run as `/tmp/*.py` and prepend the cwd to `sys.path`
+   (`os.sys.path.insert(0, os.getcwd())`), so always invoke them from the
+   project root.
 
 ## Step 0: Detect verb and extract ticket ID
 
