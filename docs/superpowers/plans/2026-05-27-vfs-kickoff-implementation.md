@@ -118,6 +118,14 @@ Scaffold a per-ticket VFS workspace, or resume an existing one. See `docs/superp
 
 ## Preconditions (check before doing anything)
 
+> **Run every step snippet from the project root.** The snippets are written
+> to `/tmp/*.py` and executed with `python3 /tmp/...`, which puts `/tmp` (not
+> your cwd) on `sys.path`. Each snippet prepends the cwd back
+> (`os.sys.path.insert(0, os.getcwd())`), so `import agent_vfs` only resolves
+> when the working directory is the project root — both for a co-located
+> `agent_vfs/` source checkout and for a `pip install`ed copy. Always
+> `cd <project-root>` before invoking a snippet.
+
 1. `.vfs/` directory exists in the current project root. If it doesn't, refuse with:
    > `no .vfs/ in current project. Run 'vfs init' first.`
 
