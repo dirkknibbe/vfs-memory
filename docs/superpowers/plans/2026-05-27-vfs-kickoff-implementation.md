@@ -371,6 +371,7 @@ def next_task_counter(repo_name: str) -> int:
     is fine for personal-use scales; paginate if a single repo ever has 100+ workspaces.
     """
     import os
+    os.sys.path.insert(0, os.getcwd())  # run as /tmp/*.py: put project root on import path
     os.environ.setdefault("VFS_WRITER", "claude")
     from agent_vfs import VFS
     v = VFS()
@@ -707,6 +708,7 @@ Compose four writes to `vfs.persistent`. Use the snippet below — save to `/tmp
 import json
 from datetime import datetime, timezone
 import os
+os.sys.path.insert(0, os.getcwd())  # run as /tmp/*.py: put project root on import path
 os.environ.setdefault("VFS_WRITER", "claude")
 from agent_vfs import VFS
 
@@ -909,6 +911,7 @@ Abort.
 import json
 import sys
 import os
+os.sys.path.insert(0, os.getcwd())  # run as /tmp/*.py: put project root on import path
 os.environ.setdefault("VFS_WRITER", "claude")
 from agent_vfs import VFS
 from agent_vfs.types import NotFoundError
@@ -938,6 +941,7 @@ If `missing=true`: print the hint message to the user and abort. Do not proceed 
 # /tmp/vfs_kickoff_resume_read.py (continuation; assumes Step A succeeded)
 import json
 import os
+os.sys.path.insert(0, os.getcwd())  # run as /tmp/*.py: put project root on import path
 os.environ.setdefault("VFS_WRITER", "claude")
 from agent_vfs import VFS
 from agent_vfs.types import NotFoundError
